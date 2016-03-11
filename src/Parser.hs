@@ -46,6 +46,7 @@ langExtendFlag = do
     skipWhile isSpace
     value <- takeWhile isName
     skipWhile isSpace
+    skipWhile isEndOfLine
     return (encodeUtf8 flag, if' (null value) "SET" (encodeUtf8 value))
   where isName = inClass "A-Z_"
 
