@@ -235,7 +235,7 @@ runCode flags code = do
                                             PNull a   -> tf { storages = reStorP . PNull   $ PP.actDup v' a }
                                             PRandom a -> tf { storages = reStorP . PRandom $ PP.actDup v' a }
                                             Queue sq  -> f Queue sq
-                                            Stack sq  -> f Queue sq
+                                            Stack sq  -> f Stack sq
                             )
                             , (ㅍ, return $
                               let x = let v = fromIntegral $ batchimV batchim
