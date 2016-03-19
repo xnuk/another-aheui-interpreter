@@ -22,7 +22,7 @@ data Flag a = Flag { name :: a
 
 data WsIgnore = ALL | WHITESPACE | LINE_BREAK | DO_NOT_IGNORE deriving (Show, Eq, Read, Ord, Bounded, Data)
 data SetUnset = UNSET | SET deriving (Show, Eq, Read, Ord, Bounded, Data)
-data Spec = NULL deriving (Show, Eq, Read, Ord, Bounded, Data)
+data Spec = NULL | RANDOM deriving (Show, Eq, Read, Ord, Bounded, Data)
 
 
 data Flag = CONDITIONAL_CANNON_JUMP SetUnset

@@ -8,6 +8,7 @@ import Data.Maybe (fromJust, fromMaybe)
 
 import Control.Exception (SomeException, try)
 import Control.Monad (liftM, liftM2)
+import Control.Arrow (second)
 
 import Data.Char (chr, ord)
 import Data.Word (Word8)
@@ -27,14 +28,17 @@ import qualified Data.Sequence as Seq
 import Debug.NoTrace (trace)
 
 import Parser (codeParser, isSpace, isEndOfLine)
-import Flag (Flag(..), getFlag, isFlag, reMap, SetUnset(..), WsIgnore(..))
+import Flag (Flag(..), getFlag, isFlag, reMap, SetUnset(..), WsIgnore(..), Spec(..))
 import Util (if', during, during1)
+import qualified PurePassage as PP
+import PassageNull(PassageNull, newPassageNull)
+import PassageRandom(PassageRandom, newPassageRandom)
 
 -- Cho, Jung, Jong(J_), Moeum, Batchim, Syllable(Syllable), syllable, Jaeum, ㄱ..ㅎ, ㅏ..ㅣ
 import Jamo
 
 data Speed = U Word8 | D Word8 | L Word8 | R Word8 deriving (Eq, Show)
-data Storage = Stack (Seq Integer) | Queue (Seq Integer) | Ext deriving (Eq, Show)
+data Storage = Stack (Seq Integer) | Queue (Seq Integer) | PNull PassageNull | PRandom PassageRandom deriving (Show)
 
 -- https://twitter.com/hooneu777/status/699937987761537030
 -- 이름 추천 받습니다
@@ -81,7 +85,8 @@ setSpeedByJung jung sp
                             (ㅗ, U 1), (ㅛ, U 2), (ㅜ, D 1), (ㅠ, D 2)]
 
 pop :: Int -> Storage -> Maybe ([Integer], Storage)
-pop n Ext = Just (replicate n 0, Ext)
+pop n (PNull a)   = second PNull   <$> PP.pop n a
+pop n (PRandom a) = second PRandom <$> PP.pop n a
 pop 0 stor = Just ([], stor)
 pop n (Stack sequ) = case viewl sequ of
                        EmptyL -> Nothing
@@ -95,7 +100,8 @@ pop n (Queue sequ) = case viewl sequ of
                            Just (a:xs, sq')
 
 push :: Integer -> Storage -> Storage
-push _ Ext = Ext
+push v (PNull a)   = PNull   $ PP.push v a
+push v (PRandom a) = PRandom $ PP.push v a
 push v (Stack sq) = Stack (v <| sq)
 push v (Queue sq) = Queue (sq |> v)
 
@@ -125,7 +131,11 @@ interpret text = case codeParser text of
                    Right (flags, code) -> runCode (reMap flags) code
 
 runCode :: Set Flag -> Array Int (Array Int (Maybe Syllable)) -> IO ()
-runCode flags code = codeRunner (0, 0) (Tiffany { speed = D 1, storages = Map.empty, storageP = J_ })
+runCode flags code = do
+    passage <- case getF PASSAGE_SPEC of
+                 PASSAGE_SPEC NULL -> return (PNull newPassageNull)
+                 PASSAGE_SPEC RANDOM -> PRandom <$> (newPassageRandom $ if' (isF NEED_MORE_COPY SET) SET UNSET)
+    codeRunner (0, 0) (Tiffany { speed = D 1, storages = Map.singleton ㅎ passage, storageP = J_ })
     where codeRunner :: (Int, Int) -> Tiffany -> IO ()
           codeRunner (row, col) tiffany@(Tiffany { speed = inertiaSpeed }) = do
               let go sp (r, c) =
@@ -143,6 +153,7 @@ runCode flags code = codeRunner (0, 0) (Tiffany { speed = D 1, storages = Map.em
                     tf@(Tiffany { speed = speed' }) <- runLetter syll tiffany
                     codeRunner (go speed' (row, col)) (trace (show syll ++ show (row, col) ++ show tf) tf)
 
+          getF :: Bounded a => (a -> Flag) -> Flag
           getF = flip getFlag flags
           wsIgnoreLevel = let (INPUT_WHITESPACE_IGNORE_LEVEL x) = getF INPUT_WHITESPACE_IGNORE_LEVEL in x
           isF f a = isFlag f a flags
@@ -156,9 +167,7 @@ runCode flags code = codeRunner (0, 0) (Tiffany { speed = D 1, storages = Map.em
                   tf@(Tiffany { speed = speed', storageP = storageP', storages = storages' }) = tiffany { speed = setSpeedByJung jung (speed tiffany) }
                   storp p = case Map.lookup p storages' of
                               Just a -> a
-                              Nothing -> fromMaybe (Stack Seq.empty) $ lookup p [ (ㅇ, Queue Seq.empty)
-                                                                                , (ㅎ, Ext)
-                                                                                ]
+                              Nothing -> if' (p==ㅇ) (Queue Seq.empty) (Stack Seq.empty)
 
                   stor = storp storageP'
                   reStorP s = Map.insert storageP' s storages'
@@ -215,31 +224,35 @@ runCode flags code = codeRunner (0, 0) (Tiffany { speed = D 1, storages = Map.em
                                                              where tf' = tf { storages = reStorP s }
                                                _ -> tf { speed = flipDirection speed', storages = reStorP stor }
                             )
-                          , (ㅃ, return . if' (stor==Ext) tf $
-                              case pop 1 stor of
-                                Just ([a], _) ->
-                                    let v = batchimV batchim
-                                        nmc = isF NEED_MORE_COPY SET && v>=2
-                                        f constr sq = tf { storages = reStorP . constr $ if' nmc (Seq.replicate (fromIntegral v) a >< sq) (a <| sq) }
-                                    in case stor of
-                                         Queue sq -> f Queue sq
-                                         Stack sq -> f Stack sq
-                                         Ext -> undefined -- should not be matched
-                                _ -> tf { speed = flipDirection speed' }
+                          , (ㅃ,
+                              let v = batchimV batchim
+                                  nmc = isF NEED_MORE_COPY SET && batchim /= ㅇ && batchim /= ㅎ && v>=2
+                                  v' = if' (batchim==ㅇ || batchim==ㅎ) 0 v
+                                  f constr sq = case pop 1 stor of
+                                                  Just ([a], _) -> tf { storages = reStorP . constr $ if' nmc (Seq.replicate (fromIntegral v) a >< sq) (a <| sq) }
+                                                  _ -> tf { speed = flipDirection speed' }
+                              in return $ case stor of
+                                            PNull a   -> tf { storages = reStorP . PNull   $ PP.actDup v' a }
+                                            PRandom a -> tf { storages = reStorP . PRandom $ PP.actDup v' a }
+                                            Queue sq  -> f Queue sq
+                                            Stack sq  -> f Queue sq
                             )
-                          , (ㅍ, return . if' (stor==Ext) tf $
+                            , (ㅍ, return $
                               let x = let v = fromIntegral $ batchimV batchim
                                       in if' (isF DEEP_EXCHANGE SET && batchim /= ㅇ && batchim /= ㅎ && v>0) v 0
-                              in case pop (x+2) stor of
-                                   Just (h:xs, s) ->
-                                       let f constr sq = case viewr (Seq.fromList xs) of
-                                                           leftsq :> l -> tf { storages = reStorP . constr $ (l <| leftsq) >< (h <| sq) }
-                                                           EmptyR      -> tf { speed = flipDirection speed' }
-                                       in case s of
-                                            Queue sq -> f Queue sq
-                                            Stack sq -> f Stack sq
-                                            Ext -> undefined -- should not be matched
-                                   _ -> tf { speed = flipDirection speed' }
+                              in case stor of
+                                   PNull a   -> tf { storages = reStorP . PNull   $ PP.actSwap (fromIntegral x) a }
+                                   PRandom a -> tf { storages = reStorP . PRandom $ PP.actSwap (fromIntegral x) a }
+                                   _ -> case pop (x+2) stor of
+                                          Just (h:xs, s) ->
+                                              let f constr sq = case viewr (Seq.fromList xs) of
+                                                                  leftsq :> l -> tf { storages = reStorP . constr $ (l <| leftsq) >< (h <| sq) }
+                                                                  EmptyR      -> tf { speed = flipDirection speed' }
+                                              in case s of
+                                                   Queue sq -> f Queue sq
+                                                   Stack sq -> f Stack sq
+                                                   _ -> undefined
+                                          _ -> tf { speed = flipDirection speed' }
                             )
                           , (ㅅ, return tf { storageP = batchim })
                           , (ㅆ, return $ case pop 1 stor of
