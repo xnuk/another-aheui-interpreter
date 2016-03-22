@@ -11,8 +11,8 @@ import qualified Data.Text as T
 import Data.Monoid ((<>))
 import Debug.Trace (trace)
 
-cho = "ㄱㄲㄴㄷㄹㅁㅂㅅㅆㅇㅈㅊㅋㅌㅍㅎㄸㅃㅉ"
-jong = "ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅄㅁㅂㅅㅆㅇㅈㅊㅋㅌㅍㅎ"
+cho = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ"
+jong = "ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ"
 jung = "ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ"
 jaeum = intersect cho jong
 unique_cho = cho \\ jaeum

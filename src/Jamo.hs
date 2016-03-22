@@ -2,9 +2,9 @@ module Jamo where
 
 import Data.Char (ord, chr)
 
-data Cho = Cㄱ|Cㄲ|Cㄴ|Cㄷ|Cㄹ|Cㅁ|Cㅂ|Cㅅ|Cㅆ|Cㅇ|Cㅈ|Cㅊ|Cㅋ|Cㅌ|Cㅍ|Cㅎ|Cㄸ|Cㅃ|Cㅉ deriving (Enum, Eq, Ord, Show)
+data Cho = Cㄱ|Cㄲ|Cㄴ|Cㄷ|Cㄸ|Cㄹ|Cㅁ|Cㅂ|Cㅃ|Cㅅ|Cㅆ|Cㅇ|Cㅈ|Cㅉ|Cㅊ|Cㅋ|Cㅌ|Cㅍ|Cㅎ deriving (Enum, Eq, Ord, Show)
 data Jung = Mㅏ|Mㅐ|Mㅑ|Mㅒ|Mㅓ|Mㅔ|Mㅕ|Mㅖ|Mㅗ|Mㅘ|Mㅙ|Mㅚ|Mㅛ|Mㅜ|Mㅝ|Mㅞ|Mㅟ|Mㅠ|Mㅡ|Mㅢ|Mㅣ deriving (Enum, Eq, Ord, Show)
-data Jong = J_|Jㄱ|Jㄲ|Jㄳ|Jㄴ|Jㄵ|Jㄶ|Jㄷ|Jㄹ|Jㄺ|Jㄻ|Jㄼ|Jㄽ|Jㄾ|Jㄿ|Jㅀ|Jㅄ|Jㅁ|Jㅂ|Jㅅ|Jㅆ|Jㅇ|Jㅈ|Jㅊ|Jㅋ|Jㅌ|Jㅍ|Jㅎ deriving (Enum, Eq, Ord, Show)
+data Jong = J_|Jㄱ|Jㄲ|Jㄳ|Jㄴ|Jㄵ|Jㄶ|Jㄷ|Jㄹ|Jㄺ|Jㄻ|Jㄼ|Jㄽ|Jㄾ|Jㄿ|Jㅀ|Jㅁ|Jㅂ|Jㅄ|Jㅅ|Jㅆ|Jㅇ|Jㅈ|Jㅊ|Jㅋ|Jㅌ|Jㅍ|Jㅎ deriving (Enum, Eq, Ord, Show)
 
 type Moeum = Jung
 type Batchim = Jong

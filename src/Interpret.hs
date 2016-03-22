@@ -237,7 +237,7 @@ runCode flags code = do
                                             Queue sq  -> f Queue sq
                                             Stack sq  -> f Stack sq
                             )
-                            , (ㅍ, return $
+                          , (ㅍ, return $
                               let x = let v = fromIntegral $ batchimV batchim
                                       in if' (isF DEEP_EXCHANGE SET && batchim /= ㅇ && batchim /= ㅎ && v>0) v 0
                               in case stor of
