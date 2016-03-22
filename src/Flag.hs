@@ -33,6 +33,7 @@ data Flag = CONDITIONAL_CANNON_JUMP SetUnset
           | OVERWRITE_REDEFINED_BATCHIMS SetUnset
           | INPUT_WHITESPACE_IGNORE_LEVEL WsIgnore
           | PASSAGE_SPEC Spec
+          | DEBUGGER SetUnset
           deriving (Show, Eq, Read, Ord, Data)
 {-
 setOrUnsetFlag :: ByteString -> Flag ByteString

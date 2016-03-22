@@ -25,7 +25,7 @@ import Data.Ix (inRange, Ix)
 import Data.Sequence (Seq, ViewL((:<), EmptyL), viewl, (<|), (|>), (><), viewr, ViewR((:>), EmptyR))
 import qualified Data.Sequence as Seq
 
-import Debug.NoTrace (trace)
+import Debug.Trace (trace)
 
 import Parser (codeParser, isSpace, isEndOfLine)
 import Flag (Flag(..), getFlag, isFlag, reMap, SetUnset(..), WsIgnore(..), Spec(..))
@@ -149,9 +149,9 @@ runCode flags code = do
               case Just code !> row !> col of
                 Nothing          -> codeRunner (go inertiaSpeed (row, col)) tiffany
                 Just Nothing     -> codeRunner (go inertiaSpeed (row, col)) tiffany
-                Just (Just syll) -> do
+                Just (Just syll@(Syllable cho _ batchim)) -> do
                     tf@(Tiffany { speed = speed' }) <- runLetter syll tiffany
-                    codeRunner (go speed' (row, col)) (trace (show syll ++ show (row, col) ++ show tf) tf)
+                    codeRunner (go speed' (row, col)) ((if' (isF DEBUGGER SET && cho==ㅇ && batchim==ㅎ) trace (flip const)) (show syll ++ show (row, col) ++ show tf) tf)
 
           getF :: Bounded a => (a -> Flag) -> Flag
           getF = flip getFlag flags
