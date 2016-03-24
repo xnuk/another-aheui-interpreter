@@ -187,7 +187,13 @@ runCode flags code = do
                             )
                           , (ㅉ, return $ if isF CANNON_JUMP SET
                                               then let x = batchimV batchim
-                                                   in if' (x>=3) (tf { speed = changeDistance speed' x }) tf
+                                                   in if' (batchim == ㅇ || batchim == ㅎ) tf
+                                                    . if' (x>=1) (tf {speed = changeDistance speed' x }) $
+                                                        case pop 1 stor of
+                                                          Just ([a], s) | a<=0 ->      tf { storages = reStorP s, speed = changeDistance speed' 1 }
+                                                                        | a>16 ->      tf { storages = reStorP s, speed = changeDistance speed' 16 }
+                                                                        | otherwise -> tf { storages = reStorP s, speed = changeDistance speed' (fromIntegral a) }
+                                                          _ -> tf { speed = flipDirection speed' }
                                               else tf
                             )
                           , (ㄷ, return $ cal' (+))
