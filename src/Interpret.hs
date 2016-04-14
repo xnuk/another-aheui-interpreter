@@ -1,10 +1,11 @@
-{-# LANGUAGE OverloadedStrings, TupleSections #-}
+{-# LANGUAGE OverloadedStrings, TupleSections, RecordWildCards #-}
 module Interpret (interpret) where
 
-import Data.Map.Strict (Map, fromList, union)
+import Data.Map.Strict (Map, fromList, union, foldlWithKey)
 import Data.Set (Set)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromJust, fromMaybe)
+import Data.List (intercalate)
 
 import Control.Exception (SomeException, try)
 import Control.Monad (liftM, liftM2)
@@ -29,6 +30,7 @@ import Debug.Trace (trace)
 
 import Parser (codeParser, isSpace, isEndOfLine)
 import Flag (Flag(..), getFlag, isFlag, reMap, SetUnset(..), WsIgnore(..), Spec(..))
+import qualified Flag.Debugger as D
 import Util (if', during, during1)
 import qualified PurePassage as PP
 import PassageNull(PassageNull, newPassageNull)
@@ -37,15 +39,30 @@ import PassageRandom(PassageRandom, newPassageRandom)
 -- Cho, Jung, Jong(J_), Moeum, Batchim, Syllable(Syllable), syllable, Jaeum, ㄱ..ㅎ, ㅏ..ㅣ
 import Jamo
 
-data Speed = U Word8 | D Word8 | L Word8 | R Word8 deriving (Eq, Show)
-data Storage = Stack (Seq Integer) | Queue (Seq Integer) | PNull PassageNull | PRandom PassageRandom deriving (Show)
+data Speed = U Word8 | D Word8 | L Word8 | R Word8 deriving (Eq)
+data Storage = Stack (Seq Integer) | Queue (Seq Integer) | PNull PassageNull | PRandom PassageRandom
+
+instance Show Speed where
+    show (U n) = 'U':show n
+    show (D n) = 'D':show n
+    show (L n) = 'L':show n
+    show (R n) = 'R':show n
+
+instance Show Storage where
+    show (Stack   s) = "Stack" ++ drop 9 (show s)
+    show (Queue   s) = "Queue" ++ drop 9 (show s)
+    show (PNull   _) = "Null"
+    show (PRandom s) = show s
 
 -- https://twitter.com/hooneu777/status/699937987761537030
 -- 이름 추천 받습니다
 data Tiffany = Tiffany { speed :: Speed
                        , storageP :: Batchim
                        , storages :: Map Batchim Storage
-                       } deriving (Show)
+                       }
+
+instance Show Tiffany where
+    show Tiffany{..} = show speed ++ ' ':tail (show storageP) ++ "# " ++ intercalate ", " (foldlWithKey (\b k v -> b ++ [tail (show k) ++ ": " ++ show v]) [] storages)
 
 -- codeParser :: Text -> Either String (Map ByteString ByteString, Array Int (Array Int (Maybe Syllable)))
 
@@ -135,6 +152,7 @@ runCode flags code = do
     passage <- case getF PASSAGE_SPEC of
                  PASSAGE_SPEC NULL -> return (PNull newPassageNull)
                  PASSAGE_SPEC RANDOM -> PRandom <$> (newPassageRandom $ if' (isF NEED_MORE_COPY SET) SET UNSET)
+                 _ -> undefined
     codeRunner (0, 0) (Tiffany { speed = D 1, storages = Map.singleton ㅎ passage, storageP = J_ })
     where codeRunner :: (Int, Int) -> Tiffany -> IO ()
           codeRunner (row, col) tiffany@(Tiffany { speed = inertiaSpeed }) = do
@@ -151,7 +169,7 @@ runCode flags code = do
                 Just Nothing     -> codeRunner (go inertiaSpeed (row, col)) tiffany
                 Just (Just syll@(Syllable cho _ batchim)) -> do
                     tf@(Tiffany { speed = speed' }) <- runLetter syll tiffany
-                    codeRunner (go speed' (row, col)) ((if' (isF DEBUGGER SET && cho==ㅇ && batchim==ㅎ) trace (flip const)) (show syll ++ show (row, col) ++ show tf) tf)
+                    codeRunner (go speed' (row, col)) ((if' (isF DEBUGGER D.ALL || isF DEBUGGER D.SET && cho==ㅇ && batchim==ㅎ) trace (flip const)) (show syll ++ show (row, col) ++ show tf) tf)
 
           getF :: Bounded a => (a -> Flag) -> Flag
           getF = flip getFlag flags

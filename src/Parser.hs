@@ -5,7 +5,7 @@ module Parser (codeParser, isSpace, isEndOfLine) where
 import Prelude hiding (takeWhile, null)
 
 -- import Data.Attoparsec.Text hiding (endOfLine, isEndOfLine)
-import Data.Attoparsec.Text (Parser, parse, parseOnly, inClass, takeWhile, takeWhile1, takeTill, skip, skipWhile, string, endOfInput, sepBy, choice, IResult(Done, Partial, Fail), satisfy, many')
+import Data.Attoparsec.Text (Parser, parseOnly, inClass, takeWhile, takeWhile1, takeTill, skip, skipWhile, string, endOfInput, sepBy, choice, satisfy, many')
 --import Data.Attoparsec.Combinator (lookAhead)
 import Control.Applicative ((<|>))
 import Control.Monad (void, liftM2)

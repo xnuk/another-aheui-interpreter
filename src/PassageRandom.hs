@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module PassageRandom(PassageRandom, newPassageRandom) where
 
 import PurePassage (PurePassage(..))
@@ -9,16 +11,19 @@ data PassageRandom = PassageRandom { promiseDup :: Integer
                                    , needMoreCopy :: SetUnset
                                    , randomSeed :: StdGen
                                    , recent :: Integer
-                                   } deriving (Show)
+                                   }
+
+instance Show PassageRandom where
+    show PassageRandom{..} = "PRandom ("++show promiseDup++") next="++show recent
 
 rn :: (Integer, Integer)
 rn = (0, 32767)
 
 instance PurePassage PassageRandom where
-    actDup n p@(PassageRandom { promiseDup = d, needMoreCopy = f }) = p { promiseDup = d + fromIntegral (if' (f==SET && n>2) n 1) }
+    actDup n p@PassageRandom { promiseDup = d, needMoreCopy = f } = p { promiseDup = d + fromIntegral (if' (f==SET && n>2) n 1) }
     actSwap _ p = p { promiseDup = 1 }
     push _ p = p
-    pop n p@(PassageRandom { promiseDup = dup, randomSeed = seed, recent = r }) =
+    pop n p@PassageRandom { promiseDup = dup, randomSeed = seed, recent = r } =
         Just $ case dup - fromIntegral n of
                  0 -> let (a, g) = randomR rn seed
                       in ( replicate (fromIntegral n) r

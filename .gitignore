@@ -2,3 +2,5 @@ dist/
 *.hi
 *.o
 .stack-work/
+
+latest_nightly.fish

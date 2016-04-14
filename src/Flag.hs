@@ -14,6 +14,8 @@ import Data.Data (toConstr, Data)
 import Text.Read (readMaybe)
 
 import Util (if')
+
+import Flag.Debugger (Debugger)
 {-
 data Flag a = Flag { name :: a
                    , canBe :: a -> Bool
@@ -33,7 +35,7 @@ data Flag = CONDITIONAL_CANNON_JUMP SetUnset
           | OVERWRITE_REDEFINED_BATCHIMS SetUnset
           | INPUT_WHITESPACE_IGNORE_LEVEL WsIgnore
           | PASSAGE_SPEC Spec
-          | DEBUGGER SetUnset
+          | DEBUGGER Debugger
           deriving (Show, Eq, Read, Ord, Data)
 {-
 setOrUnsetFlag :: ByteString -> Flag ByteString
